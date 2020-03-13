@@ -4,3 +4,5 @@ scripts.js
 *.zip
 *.geojson
 custom.css
+dist
+old
