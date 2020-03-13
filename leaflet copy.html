@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tipalea Homework</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css"
+      integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
+      crossorigin=""
+    />
+    <script
+      src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"
+      integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=="
+      crossorigin=""
+    ></script>
+    <!-- <script src="leaflet.ajax.min.js?v=1"></script> -->
+    <script type="text/javascript" src="test_data_v3.js"></script>
+    <style>
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+      }
+      #map {
+        width: 100%;
+        height: 100vh;
+      }
+      .info {
+        padding: 6px 8px;
+        font: 14px/16px Arial, Helvetica, sans-serif;
+        background: white;
+        background: rgba(255, 255, 255, 0.8);
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+        border-radius: 5px;
+        max-width: 250px;
+      }
+      .info h4 {
+        margin: 0 0 5px;
+        color: #777;
+      }
+      .legend {
+        line-height: 18px;
+        color: #555;
+      }
+      .legend i {
+        width: 18px;
+        height: 18px;
+        float: left;
+        margin-right: 8px;
+        opacity: 0.7;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <script>
+      const mapboxAccessToken = 'pk.eyJ1IjoiYW50YnVybmV0dCIsImEiOiJjamw1dG1rYjcwejB0M3FxODV5MHFlNG44In0.jlI769DKp6gfC-tZlotZkQ';
+      const map = L.map('map').setView([-33.8383, 151.209336], 17);
+
+      L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=' + mapboxAccessToken, {
+        id: 'mapbox/light-v9',
+        attribution: 'Map data &copy; ',
+        tileSize: 512,
+        zoomOffset: -1
+      }).addTo(map);
+
+      L.geoJson(parcelData).addTo(map);
+
+      function getColor(d) {
+        return d > 500
+          ? '#800026'
+          : d > 400
+          ? '#BD0026'
+          : d > 300
+          ? '#E31A1C'
+          : d > 200
+          ? '#FC4E2A'
+          : d > 100
+          ? '#FD8D3C'
+          : d > 0
+          ? '#FEB24C'
+          : d > -100
+          ? '#FED976'
+          : '#FFEDA0';
+      }
+
+      function style(feature) {
+        return {
+          fillColor: getColor(feature.properties.tp_rating_layer_1_fsr_upside_pc),
+          weight: 2,
+          opacity: 1,
+          color: 'silver',
+          //   dashArray: '3',
+          fillOpacity: 0.7
+        };
+      }
+
+      L.geoJson(parcelData, { style: style }).addTo(map);
+
+      function highlightFeature(e) {
+        var layer = e.target;
+
+        layer.setStyle({
+          weight: 5,
+          color: '#666',
+          dashArray: '',
+          fillOpacity: 0.7
+        });
+
+        if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+          layer.bringToFront();
+        }
+        info.update(layer.feature.properties);
+      }
+
+      var geojson;
+      function resetHighlight(e) {
+        geojson.resetStyle(e.target);
+        info.update();
+      }
+
+      function zoomToFeature(e) {
+        map.fitBounds(e.target.getBounds());
+      }
+      function onEachFeature(feature, layer) {
+        layer.on({
+          mouseover: highlightFeature,
+          mouseout: resetHighlight,
+          click: zoomToFeature
+        });
+      }
+
+      geojson = L.geoJson(parcelData, {
+        style: style,
+        onEachFeature: onEachFeature
+      }).addTo(map);
+
+      var info = L.control();
+
+      info.onAdd = function(map) {
+        this._div = L.DomUtil.create('div', 'info');
+        this.update();
+        return this._div;
+      };
+
+      // method that we will use to update the control based on feature properties passed
+      info.update = function(props) {
+        this._div.innerHTML =
+          '<h4>Info</h4>' +
+          (props
+            ? '<b>' +
+              props.tp_street_address +
+              '</b>' +
+              '<ul>' +
+              '<li><i>Existing NLA:</i> ' +
+              props.tp_existing_nla +
+              '</li>' +
+              '<li><i>Built FSR:</i> ' +
+              props.tp_built_fsr_nla +
+              ' : 1' +
+              '</li>' +
+              '<li><i>Potential NLA:</i> ' +
+              props.tp_potential_nla +
+              '</li>' +
+              '<li><i>Potential FSR (NLA):</i> ' +
+              props.tp_potential_fsr_nla +
+              ' : 1' +
+              '</li>' +
+              '<li><i>Rating FSR upside %:</i> ' +
+              props.tp_rating_layer_1_fsr_upside_pc +
+              '%</li>' +
+              '<li><i>Rating FSR upside m<sup>2</sup>:</i> ' +
+              props.tp_rating_layer_2_fsr_upside_m2 +
+              'm<sup>2</sup>' +
+              '</li>' +
+              '<li><i>Site Area:</i> ' +
+              props.tp_site_area +
+              'm<sup>2</sup>' +
+              '<li><i>Grade:</i> ' +
+              props.tp_building_grade +
+              '</li>' +
+              '<li><i>Zoning:</i> ' +
+              props.tp_zoning +
+              '</li>' +
+              '<li><i>Desc:</i> ' +
+              props.tp_description +
+              '</li>' +
+              '<li><i>Owner:</i> ' +
+              props.tp_owner +
+              '</li>' +
+              '</ul>'
+            : 'Hover over a parcel');
+      };
+
+      info.addTo(map);
+
+      //   Legend
+      var legend = L.control({ position: 'bottomright' });
+
+      legend.onAdd = function(map) {
+        var div = L.DomUtil.create('div', 'info legend'),
+          grades = [-100, 0, 100, 200, 300, 400, 500],
+          labels = ['-100', '0', '100', '200', '300', '400', '500'];
+
+        // loop through our density intervals and generate a label with a colored square for each interval
+        for (var i = 0; i < grades.length; i++) {
+          div.innerHTML +=
+            // '<i style="background:' + getColor(grades[i] + 1) + '"></i> ' + grades[i] + (grades[i + 1] ? '&ndash;' + grades[i + 1] + '<br>' : '+');
+            '<i style="background:' + getColor(grades[i] + 1) + '"></i> ' + grades[i] + (grades[i + 1] ? '&ndash;' + grades[i + 1] + '%<br>' : '+');
+        }
+
+        return div;
+      };
+
+      legend.addTo(map);
+    </script>
+  </body>
+</html>
