@@ -1,0 +1,3 @@
+const CONFIG = {
+  MAPBOX_API_TOKEN: 'pk.eyJ1IjoiYW50YnVybmV0dCIsImEiOiJjamw1dG1rYjcwejB0M3FxODV5MHFlNG44In0.jlI769DKp6gfC-tZlotZkQ'
+};
